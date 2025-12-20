@@ -145,12 +145,14 @@ parametre_grid={
     'max_depth' : [None, 10, 20]
 }
 
+#initialisation du model RandomForest avec grid search pour trouver les meilleurs parametres
 grid_Search = GridSearchCV(estimator = RandomForestClassifier(),
 
                            param_grid = parametre_grid,
                            cv = 5,
                            verbose = 1)
 
+#initialisation du model RandomForest
 model = RandomForestClassifier(
     criterion = "gini",
     n_estimators = 100,
@@ -163,7 +165,10 @@ grid_Search.fit(x_train, y_train)
 
 print("Meilleurs parametres trouvé:", grid_Search.best_params_)
 
+#meilleursModele contiens les meilleurs estimateur selon la grid Search
 meilleursModele = grid_Search.best_estimator_
+
+#prediction avec predict du model
 prediction = meilleursModele.predict(x_test)
 
 print(f"Précision (Accuracy): {accuracy_score(y_test, prediction):.2f}")
@@ -179,13 +184,15 @@ noms_colonnes = x.columns
 
 feat_importances = pd.Series(importance, index=noms_colonnes)
 
+#preparation des données pour affichage optimisé
 feat_importances.nlargest(10).sort_values().plot(kind='barh', color='skyblue')
 
-# 3. On ajoute du contexte (toujours important !)
+#ajout du contexte
 plt.title("Top 10 des variables les plus importantes")
 plt.xlabel("Score d'importance")
 plt.ylabel("Variables")
 
+#matrice de confusion
 ConfusionMatrixDisplay.from_estimator(meilleursModele, x_test, y_test)
 
 plt.show()
