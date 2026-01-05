@@ -1,10 +1,11 @@
-
 #import des librairies numpy et pandas
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 #chargement du fichier csv dans df notre dataframe
-df = pd.read_csv(r"C:\Users\Utilisateur\OneDrive\Documents\archive\adult.csv")
+df = pd.read_csv("adult.csv")
 
 #suppression des caracteres non voulu par des case vide avec numpy
 df = df.replace("?", np.nan)
@@ -39,6 +40,37 @@ x = pd.get_dummies(x, drop_first=True, dtype=np.float32)
 x = x.astype("float32")
 print(x.shape)
 
+#Question 2
+#Equilibre des classes
+print("Répartition brute de income :")
+print(df["income"].value_counts())
+
+print("\nRépartition en pourcentage :")
+print(df["income"].value_counts(normalize=True) * 100)
+
+#Y
+print("\nRépartition de y (0/1) :")
+print(y.value_counts())
+print("\nRépartition de y (%) :")
+print(y.value_counts(normalize=True) * 100)
+
+#Statistiques descriptives simples
+print("\nStatistiques descriptives des variables numériques :")
+print(df.describe())
+
+cat_cols = ["workclass", "education", "marital-status", "gender"]
+for col in cat_cols:
+    print(f"\nTop modalités pour {col} :")
+    print(df[col].value_counts().head(5))
+
+#Visualisation de l'équilibre des classes
+import matplotlib.pyplot as plt
+
+df["income"].value_counts().plot(kind="bar")
+plt.title("Répartition des classes de revenu")
+plt.xlabel("Classe de revenu")
+plt.ylabel("Nombre d'observations")
+plt.show()
 
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -132,12 +164,52 @@ print(f"Accuracy: {accuracy:.4f}")
 
 
 
+#Question 4
+#arbre de décision
+from sklearn.tree import DecisionTreeClassifier, export_text
+
+tree_clf = DecisionTreeClassifier(
+    criterion="gini",          # ou "entropy"
+    max_depth=None,            # profondeur illimitée au début
+    min_samples_split=20,      # analogue à minsplit
+    ccp_alpha=0.0,             # paramètre de pruning (analogue à cp)
+    random_state=42
+)
+
+tree_clf.fit(x_train, y_train)
+
+#affichage des règles
+tree_rules = export_text(tree_clf, feature_names=list(x_train.columns), max_depth=3)
+print(tree_rules)
+
+#Question 5
+#prédiction sur l'arbre
+y_pred_tree = tree_clf.predict(x_test)
+
+#erreur de test
+accuracy_tree = accuracy_score(y_test, y_pred_tree)
+print(f"Accuracy arbre de décision : {accuracy_tree:.4f}")
+print(f"Erreur de test arbre de décision : {1 - accuracy_tree:.4f}")
+
+
+#matrice de confusion
+cm_tree = confusion_matrix(y_test, y_pred_tree)
+print("Matrice de confusion (arbre de décision) :")
+print(cm_tree)
+
+print("\nRapport de classification (arbre de décision) :")
+print(classification_report(y_test, y_pred_tree, target_names=noms_uniques))
+
+#visualisatiion matrice
+from sklearn.metrics import ConfusionMatrixDisplay
+
+ConfusionMatrixDisplay.from_estimator(tree_clf, x_test, y_test)
+plt.title("Matrice de confusion - Arbre de décision")
+plt.show()
 
 # implémentation de random forest avec sklearn
 
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
 
 parametre_grid={
     "n_estimators" : [50, 100, 200],
