@@ -196,3 +196,67 @@ plt.ylabel("Variables")
 ConfusionMatrixDisplay.from_estimator(meilleursModele, x_test, y_test)
 
 plt.show()
+
+
+from sklearn.preprocessing import StandardScaler
+
+# On utilise ton 'x' (qui contient déjà les dummies)
+scaler = StandardScaler()
+
+# On "fit" (calcule moyenne/écart-type) et "transform" (applique la formule)
+x_scaled = scaler.fit_transform(x)
+
+
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+
+wcss = []
+# On teste de 1 à 10 clusters
+for i in range(1, 11):
+    # init='k-means++' aide l'algo à converger plus vite
+    kmeans_test = KMeans(n_clusters=i, init='k-means++', random_state=42, n_init=10)
+    kmeans_test.fit(x_scaled)
+    wcss.append(kmeans_test.inertia_)
+
+# On affiche le graphique
+plt.figure(figsize=(10,5))
+plt.plot(range(1, 11), wcss, marker='o')
+plt.title('Méthode du Coude (Elbow Method)')
+plt.xlabel('Nombre de clusters')
+plt.ylabel('Inertie (WCSS)')
+plt.show()
+
+
+
+# Choix du nombre de clusters
+k = 3
+
+kmeans = KMeans(n_clusters=k, init='k-means++', random_state=42, n_init=10)
+
+# Entrainement sur les données mises à l'échelle
+kmeans.fit(x_scaled)
+
+# Récupération des étiquettes (0, 1, 2...) pour chaque ligne de ton tableau
+cluster_labels = kmeans.labels_
+
+
+# On crée une copie de x pour ne pas casser tes variables pour la suite
+df_analyse = x.copy()
+
+# On ajoute la colonne des clusters
+df_analyse['Cluster'] = cluster_labels
+
+# On ajoute aussi ton 'y' (income) juste pour voir comment les groupes se comportent face au revenu
+# (Rappel : le K-Means n'a PAS utilisé cette info pour créer les groupes)
+df_analyse['Revenu_Target'] = y
+
+# Analyse des profils moyens par cluster
+print("\n--- MOYENNES PAR CLUSTER ---")
+# On groupe par cluster et on prend la moyenne
+grouped_means = df_analyse.groupby('Cluster').mean()
+
+# Affichons quelques colonnes intéressantes (les numériques pures sont plus parlantes)
+# 'age', 'education-num', 'hours-per-week' sont dans ton x d'origine ou encodé ?
+# Comme tu as fait un get_dummies, 'age' est intact, mais 'education' est éclaté.
+# Regardons tout :
+print(grouped_means.T) # .T transpose pour une lecture plus facile verticale
